@@ -1,60 +1,85 @@
 import random
 class Dungeon:
     # the dungeon data structure should hold some info about the dungeon, and then a bunch of room objects
-    theme=0
-    type=0
-    rooms = []
-    firstroom=0
+    # hmm the fact that I was making class variables explains a lot acutally lol im so dumb
     def __init__(self):
-        print("ok")
-    def generateRoom(self):
-        self.firstroom = Room(0)
+        self.theme=0 # TODO implement these for themeing a room/dungeon
+        self.type=0
+        self.rooms = []
+        self.firstroom=0
+        self.rooms.append(Room())
+    def makeDungeon(self,n):
+        x = 0
+        while x < n:
+            a = random.randint(0,len(self.rooms)-1)
+            r = Room()
+            self.rooms[a].addchild(r)
+            self.rooms.append(r)
+            print(f"adding new {r} and adding it to index {a}")
+            x+=1
     def printDungeon(self):
-        self.firstroom.printroom()
+        print(self.rooms)
+        for room in self.rooms:
+            room.printRoom()
+
+# terrain types:
+# 0 passable terrain?
+# 1 parent room link
+# 2 child room link
+
+#TODO more
 
 class Room:
-    size_x=0
-    size_y=0
-    type=0 # this is what kind of room it is, which roughly shows what will be in the room
-    others=[] # the rooms that are connected to this one... maybe a tuple or something i d k
-    id = 0
-    def __init__(self,x,y):
-        self.size_x = x
-        self.size_y = y
-    def __init__(self,depth): # a random room
-        self.id = random.randint(1,500)
-        print(f"making a room: {self.id}")
-        if (depth > 1):
-            o = 0
-        elif (depth > 0):
-            o = random.randint(0,1)
-        else:
-            o = random.randint(1,2)
-        for x in range(o): # ?
-            print(f"linking a new room to {self.id}")
-            self.others.append(Room(depth+1))
-    def printroom(self):
-        print(f" room, connected to",end="")
-        print(f"{self.others}")
-        # for x in self.others:
-        #     x.printroom()
-# generate a room
-def genroom():
-    x = random.randint(1,10)
-    y = random.randint(1,10)
-    room = [[" "] * y] * x
-    for x in room:
-        for y in x:
-            # pick tiles ? rudamentary to just pick randomly ?
-            print("X")
-    return room
+    def __init__(self):
+        self.children = []
+        self.id = random.randint(1,100) # placeholder mostly for helping with debugging by giving rooms an identifier
+        self.x = random.randint(3,8)
+        self.y = random.randint(3,8)
+        self.grid = [ [0] * self.x for i in range(self.y)]
+        tmp = enumerateOutside(self.grid)
+        self.grid = tmp[0]
+        # place the entry and exit points
+        exit = False
+        placed =0
+        for x,a in enumerate(self.grid):
+            for y,b in enumerate(a):
+                if self.grid[x][y] == -1: # this doesn't quite work
+                    place = random.randint(0,tmp[1])
+                    if place <= len(self.children)+placed:
+                        placed += 1
+                        if not exit:
+                            self.grid[x][y] = 1
+                            exit = True
+                        else:
+                            self.grid[x][y] = 2
 
-def printroom(room):
-    for x in room:
-        for y in x:
-            print(f"{y},",end="")
+
+    def __str__(self):
+        return f"Room:{self.id}"
+    def __repr__(self):
+        return self.__str__()
+    def addchild(self,r):
+        self.children.append(r)
+    def printRoom(self):
+        print(f" room: {self.id}, leads to: ",end="")
+        print(self.children)
         print("")
-#printroom(genroom())
+        print(self.grid)
+def enumerateOutside(grid):
+    count = 0
+    for x,axis in enumerate(grid):
+        for y, axiis in enumerate(axis):
+            print(f"{x},{y}")
+            if x==0 or y==0 or x==len(grid)-1 or y==len(axis)-1:
+                print("matches")
+                grid[x][y] = -1 # placeholder
+                print(grid)
+                count +=1
+    print(grid)
+    return (grid,count)
+            # this is a valid position for a boundary
+
+
 d = Dungeon()
-d.generateRoom()
+d.makeDungeon(5)
 d.printDungeon()
