@@ -7,7 +7,7 @@ class Graph(object):
             graph_dict = {}
         self._graph_dict = graph_dict
 
-    def edges(self, vertice):
+    def edges(self, vertice): # this one is the link
         return self._graph_dict[vertice]
 
     def all_vertices(self):
@@ -59,7 +59,7 @@ def generateRandomGraph(vertices,edges):
     for x in range(vertices):
         a = set()
         for y in range(random.randint(1,edges)):
-            t = random.randint(0,vertices-1)# node can't connect to its self 
+            t = random.randint(0,vertices-1)# node can't connect to its self
             while t == x:
                 t = random.randint(0,vertices-1)
             a.add(t)
@@ -72,3 +72,8 @@ graph = Graph(g)
 
 for vertice in graph:
     print(f"Edges of vertice {vertice}: ", graph.edges(vertice))
+
+def assignCoordinates(gr):
+    coordinate = {}
+    for vertice in gr:
+        
