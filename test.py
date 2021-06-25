@@ -21,8 +21,8 @@ def randomshapes(numVertices,start,size,result, initialAngle,):
 
     #midpoints.append(start) # create a list of the midpoint of each room, and disallow placing new rooms too close to any existing room...
 
-    numVertices = random.randint(numVertices-2,numVertices+4) # add some variation... has to be able to become simpler because each later version will use this new value
-    size = random.randint(size-2,size+20) # I almost want this one to be a standard deviation
+    numVertices = random.randint(numVertices-3,numVertices+7) # add some variation... has to be able to become simpler because each later version will use this new value
+    size = random.randint(size-10,size+40) # I almost want this one to be a standard deviation
     points = []
     anglerange = (2 * math.pi) / numVertices
     branched = 0
@@ -44,6 +44,12 @@ def contained (point,points): # returns true if the point is close to any other 
 def distance(p1,p2): # haven't actually tested this lol
     d = math.sqrt(((p1[0] - p2[0])**2) + ((p1[1]-p2[1])**2))
     return d
+
+
+def slope(p1,p2): # slope of two points, for generating hallways I think
+    return (p2[1]-p1[1])/(p2[0]/p1[0])
+def perpSlope(sl):
+    return -1* (1/sl)
 
 def midpoint(shape):
     # calculates a shape's midpoint lol
@@ -78,11 +84,15 @@ for shape in shapes:
             shape2 += 1
         else:
             shape2 -= 1
+    # sl = perpslope(slope(shape,shapes[shape2])) # untested if these are the correct variables to pass in
+    # sl_x =
+
     # a better way would be to take two edges from each and connect them that way ?
     m1 = midpoint(shape)
     m2 = midpoint(shapes[shape2])
     m1_1 = m1[0]+random.randint(100,250),m1[1]+random.randint(100,250)
     m2_1 = m2[0]+random.randint(100,250),m2[1]+random.randint(100,250)
+    # TODO add a system that adds points randomly in the hallways, allowing them to curve around a bit 
     c = m1,m1_1,m2_1,m2 # this order matters
     draw.polygon(c,fill=128)
 # draw a grid
