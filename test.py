@@ -51,8 +51,7 @@ def slope(p1,p2): # slope of two points, for generating hallways I think
 def perpSlope(sl):
     return -1* (1/sl)
 
-def midpoint(shape):
-    # calculates a shape's midpoint lol
+def midpoint(shape): # calculates a shape's midpoint lol
     total_x = 0
     total_y = 0
     for point in shape:
@@ -61,6 +60,15 @@ def midpoint(shape):
     total_x = total_x/len(shape)
     total_y = total_y/len(shape)
     return (total_x,total_y)
+
+def nearest(shape,targ): # find the point in a shape that is nearest to a target point
+    nr = (0,0)
+    dist = 999999999
+    for point in shape:
+        if distance(point,targ) < dist:
+            nr = point
+            dist = distance(point,targ)
+    return nr
 
 x_coord = 5000
 y_coord = 5000
@@ -71,30 +79,73 @@ draw = ImageDraw.Draw(img)
 #q = randomshapes(12,(x_coord/2,y_coord/2),x_coord//15,0,1)
 #draw.polygon(q,fill=128, outline ="blue")
 shapes = []
-for x in range(10): # makes 10 random "rooms"
-    q = randomshapes(12,(random.randint(500,x_coord-500),random.randint(500,y_coord-500)),x_coord//13,0,1)
+q = randomshapes(12,(x_coord/2,y_coord/2),x_coord//13,0,1) # first shape, always in center
+shapes.append(q)
+draw.polygon(q,fill=128,outline="blue")
+for x in range(6): # makes 10 random "rooms"
+    #TODO make it so rooms can't overlap, by checking where rooms are already placed,
+    # also put rooms closer together when they're far apart, by migrating them towards the exact middle :)  until they hit that distance to another room?
+    # generate the coordinates first
+    validspot = False
+    co = random.randint(300,x_coord-300),random.randint(300,y_coord-300)
+    # test if the point is good
+    while not validspot:
+        for s in shapes:
+            if distance(co,midpoint(s)) < 400: # tune
+                co = random.randint(300,x_coord-300),random.randint(300,y_coord-300)
+            else:
+                print("good ")
+                validspot = True
+                break
+    # valid spot is found
+    q = randomshapes(12,(random.randint(300,x_coord-300),random.randint(300,y_coord-300)),x_coord//13,0,1)
     shapes.append(q)
     draw.polygon(q,fill=128, outline ="blue")
 print(shapes)
 # links the rooms together
-for shape in shapes:
-    shape2 = random.randint(0,len(shapes)-1)
-    if shape == shapes[shape2]:
-        if shape2 == 0: # this can break if the room size is 1, which ... shouldn't happen
-            shape2 += 1
-        else:
-            shape2 -= 1
-    # sl = perpslope(slope(shape,shapes[shape2])) # untested if these are the correct variables to pass in
-    # sl_x =
 
-    # a better way would be to take two edges from each and connect them that way ?
-    m1 = midpoint(shape)
-    m2 = midpoint(shapes[shape2])
-    m1_1 = m1[0]+random.randint(100,250),m1[1]+random.randint(100,250)
-    m2_1 = m2[0]+random.randint(100,250),m2[1]+random.randint(100,250)
-    # TODO add a system that adds points randomly in the hallways, allowing them to curve around a bit 
-    c = m1,m1_1,m2_1,m2 # this order matters
-    draw.polygon(c,fill=128)
+# TODO link rooms based on distance from each other, rather than randomly
+for shape in shapes:
+    shape2 = shapes[random.randint(0,len(shapes)-1)]
+    # if shape == shape2:
+    #     if shape2 == 0: # this can break if the room size is 1, which ... shouldn't happen
+    #         shape2 += 1
+    #     else:
+    #         shape2 -= 1
+    while shape == shape2:
+        shape2 = shapes[random.randint(0,len(shapes)-1)]
+
+    # different approach: find the points that are nearest each other, and link between them
+    p1 = nearest(shape,midpoint(shape2))
+    nxt = False
+    for point in shape:
+        if nxt:
+            p1a = point
+            break
+        if point == p1:
+            nxt = True
+
+
+    p2 = nearest(shape2,midpoint(shape))
+    nxt = False
+    for point in shape2[::-1]:
+        if nxt:
+            p2a = point
+            break
+        if point == p2:
+            nxt = True
+
+    c = p1a,p1,p2,p2a
+    draw.polygon(c,fill=253)
+
+    # different way to connect rooms by drawing randomly from the midpoints of different rooms
+    # m1 = midpoint(shape)
+    # m2 = midpoint(shape2)
+    # m1_1 = m1[0]+random.randint(100,250),m1[1]+random.randint(100,250)
+    # m2_1 = m2[0]+random.randint(100,250),m2[1]+random.randint(100,250)
+    # # TODO add a system that adds points randomly in the hallways, allowing them to curve around a bit
+    # c = m1,m1_1,m2_1,m2 # this order matters
+    # draw.polygon(c,fill=128)
 # draw a grid
 xx = 0
 step = x_coord/100

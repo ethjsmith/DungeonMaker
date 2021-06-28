@@ -12,6 +12,12 @@ give room a type, and build based on that like "stone puts down stone tiles, and
 basically the idea is "templating "
 some way to blend textures would also be really cool
 
+# features to add ::
+
+* [ ] Rooms don't stack on top of each other  
+* [ ] rooms move closer to each other when placed, compacting the map, shortening really long hallways
+
+
 # general idea
 
 * [ ] 0a: does the dungeon have set start / end points:
