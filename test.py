@@ -70,6 +70,13 @@ def nearest(shape,targ): # find the point in a shape that is nearest to a target
             dist = distance(point,targ)
     return nr
 
+def transformshape(shape,xch,ych): # moves a shape by x and y coordinate 
+    newshape = []
+    for point in shape:
+        p = point[0]+xch,point[1]+ych
+        newshape.append(p)
+    return newshape
+
 x_coord = 5000
 y_coord = 5000
 img = Image.new('RGB', (x_coord, y_coord), color = 'white')
@@ -92,11 +99,40 @@ for x in range(6): # makes 10 random "rooms"
     while not validspot:
         for s in shapes:
             if distance(co,midpoint(s)) < 400: # tune
+                print("too close to existing point ,retrying")
                 co = random.randint(300,x_coord-300),random.randint(300,y_coord-300)
             else:
                 print("good ")
                 validspot = True
                 break
+    # this segment attempts to move rooms/blocks closer together
+    # validspot= False
+    # sx = False
+    # sy = False
+    #
+    # print("while not validspot")
+    # for s in shapes: # skip #1 which always generates in the center ( for now )
+    #     print("looping... thru shapes")
+    #     while not validspot:
+    #         if sx == False and distance((math.floor(co[0]*.95),co[1]),midpoint(s)) > 300:
+    #             print(f"pre {co}")
+    #             co = math.floor(co[0]*.95),co[1]
+    #
+    #             print("moving x closer")
+    #             print(f"post {co}")
+    #         else:
+    #             print("x locked")
+    #             sx = True
+    #         if sy == False and distance((co[0],co[1]*.95),midpoint(s)) > 300:
+    #             co = co[0],co[1]*.95
+    #             print("moving y closer ")
+    #             print(distance(co,midpoint(s)))
+    #         else:
+    #             print("y locked")
+    #             sy = True
+    #         if sx and sy:
+    #             validspot = True
+
     # valid spot is found
     q = randomshapes(12,(random.randint(300,x_coord-300),random.randint(300,y_coord-300)),x_coord//13,0,1)
     shapes.append(q)
@@ -115,7 +151,7 @@ for shape in shapes:
     while shape == shape2:
         shape2 = shapes[random.randint(0,len(shapes)-1)]
 
-    # different approach: find the points that are nearest each other, and link between them
+    # This section generates paths by picking two near points on circles and links them
     p1 = nearest(shape,midpoint(shape2))
     nxt = False
     for point in shape:
@@ -124,7 +160,6 @@ for shape in shapes:
             break
         if point == p1:
             nxt = True
-
 
     p2 = nearest(shape2,midpoint(shape))
     nxt = False
