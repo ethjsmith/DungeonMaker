@@ -5,7 +5,7 @@
 import random, math
 from PIL import Image,ImageDraw
 
-# recursive :^) and it is kind of working too... crazy
+# No longer recursive, because honestly, what the F was I thinking with that
 def randomshapes(numVertices,start,size,result, initialAngle,):
     '''
     numVertices is how many vertices each room should have... 10-20 seems good
@@ -17,10 +17,6 @@ def randomshapes(numVertices,start,size,result, initialAngle,):
 
     '''
     # Now with a randomized starting point
-
-
-    #midpoints.append(start) # create a list of the midpoint of each room, and disallow placing new rooms too close to any existing room...
-
     numVertices = random.randint(numVertices-3,numVertices+7) # add some variation... has to be able to become simpler because each later version will use this new value
     size = random.randint(size-10,size+40) # I almost want this one to be a standard deviation
     points = []
@@ -35,30 +31,24 @@ def randomshapes(numVertices,start,size,result, initialAngle,):
     #result.extend(points)
     return points
 
-def contained (point,points): # returns true if the point is close to any other points
-    for p in points:
-        if distance(point,p) < 570: # this should be configurable ?
-            print(f" {p} is too close to {point}")
-            return True
-    return False
-def distance(p1,p2): # haven't actually tested this lol
+def distance(p1,p2): # returns the distance between two points ( which are assumed to be tuples, but really a list would work too... which is bad )
     d = math.sqrt(((p1[0] - p2[0])**2) + ((p1[1]-p2[1])**2))
     return d
 
 
 def slope(p1,p2): # slope of two points, for generating hallways I think
     return (p2[1]-p1[1])/(p2[0]/p1[0])
-def perpSlope(sl):
+def perpSlope(sl):# make a slope into a perpendicular slope... unused
     return -1* (1/sl)
 
-def midpoint(shape): # calculates a shape's midpoint lol
+def midpoint(shape): # calculates a shape's midpoint for use in measuring compared against other shapes
     total_x = 0
     total_y = 0
     for point in shape:
         total_x += point[0]
         total_y += point[1]
-    total_x = total_x/len(shape)
-    total_y = total_y/len(shape)
+    total_x = total_x/len(shape)+1
+    total_y = total_y/len(shape)+1
     return (total_x,total_y)
 
 def nearest(shape,targ): # find the point in a shape that is nearest to a target point
@@ -70,86 +60,41 @@ def nearest(shape,targ): # find the point in a shape that is nearest to a target
             dist = distance(point,targ)
     return nr
 
-def transformshape(shape,xch,ych): # moves a shape by x and y coordinate 
-    newshape = []
-    for point in shape:
-        p = point[0]+xch,point[1]+ych
-        newshape.append(p)
-    return newshape
 
-x_coord = 5000
+x_coord = 5000 # these could be set my a config or something
 y_coord = 5000
 img = Image.new('RGB', (x_coord, y_coord), color = 'white')
-#img.save('pil_red.png')
-draw = ImageDraw.Draw(img)
-
-#q = randomshapes(12,(x_coord/2,y_coord/2),x_coord//15,0,1)
-#draw.polygon(q,fill=128, outline ="blue")
+draw = ImageDraw.Draw(img,"RGBA")
 shapes = []
 q = randomshapes(12,(x_coord/2,y_coord/2),x_coord//13,0,1) # first shape, always in center
 shapes.append(q)
-draw.polygon(q,fill=128,outline="blue")
-for x in range(6): # makes 10 random "rooms"
-    #TODO make it so rooms can't overlap, by checking where rooms are already placed,
-    # also put rooms closer together when they're far apart, by migrating them towards the exact middle :)  until they hit that distance to another room?
-    # generate the coordinates first
-    validspot = False
-    co = random.randint(300,x_coord-300),random.randint(300,y_coord-300)
-    # test if the point is good
-    while not validspot:
+draw.polygon(q,fill=(128,0,0,125),outline="blue")
+for x in range(9): # makes {x} random "rooms" change the number to increase or decrease the number of generated rooms
+    valid = False
+    while not valid: # checks if a room is in a valid place ( not overlapping )
+        co = random.randint(300,x_coord-300),random.randint(300,y_coord-300)
+        valid = True
         for s in shapes:
-            if distance(co,midpoint(s)) < 400: # tune
-                print("too close to existing point ,retrying")
-                co = random.randint(300,x_coord-300),random.randint(300,y_coord-300)
-            else:
-                print("good ")
-                validspot = True
+            if distance(co,midpoint(s)) < (x_coord//13)*2: # distance is based on the x coordinate of the canvas size
+                valid = False
                 break
-    # this segment attempts to move rooms/blocks closer together
-    # validspot= False
-    # sx = False
-    # sy = False
-    #
-    # print("while not validspot")
-    # for s in shapes: # skip #1 which always generates in the center ( for now )
-    #     print("looping... thru shapes")
-    #     while not validspot:
-    #         if sx == False and distance((math.floor(co[0]*.95),co[1]),midpoint(s)) > 300:
-    #             print(f"pre {co}")
-    #             co = math.floor(co[0]*.95),co[1]
-    #
-    #             print("moving x closer")
-    #             print(f"post {co}")
-    #         else:
-    #             print("x locked")
-    #             sx = True
-    #         if sy == False and distance((co[0],co[1]*.95),midpoint(s)) > 300:
-    #             co = co[0],co[1]*.95
-    #             print("moving y closer ")
-    #             print(distance(co,midpoint(s)))
-    #         else:
-    #             print("y locked")
-    #             sy = True
-    #         if sx and sy:
-    #             validspot = True
 
-    # valid spot is found
-    q = randomshapes(12,(random.randint(300,x_coord-300),random.randint(300,y_coord-300)),x_coord//13,0,1)
+    q = randomshapes(12,co,x_coord//13,0,1)
     shapes.append(q)
-    draw.polygon(q,fill=128, outline ="blue")
+    draw.ellipse([(co[0]-10,co[1]-10),(co[0]+10,co[1]+10)],fill="black") # draw a dot at the midpoint of the room, for debugging
+    draw.polygon(q,fill=(random.randint(1,100),random.randint(1,250),random.randint(1,250),150), outline ="blue")
 print(shapes)
 # links the rooms together
 
-# TODO link rooms based on distance from each other, rather than randomly
+# links rooms based on distance, instead of randomly, but that means that often rooms link to each other instead of random ? TODO add more links
 for shape in shapes:
-    shape2 = shapes[random.randint(0,len(shapes)-1)]
-    # if shape == shape2:
-    #     if shape2 == 0: # this can break if the room size is 1, which ... shouldn't happen
-    #         shape2 += 1
-    #     else:
-    #         shape2 -= 1
-    while shape == shape2:
-        shape2 = shapes[random.randint(0,len(shapes)-1)]
+    shape2 = []
+    dist = 999999999
+    for s in shapes:
+        nd = distance(midpoint(shape),midpoint(s))
+        if nd > 50 and nd < dist:
+            shape2 = s
+            dist = nd
 
     # This section generates paths by picking two near points on circles and links them
     p1 = nearest(shape,midpoint(shape2))
@@ -160,36 +105,31 @@ for shape in shapes:
             break
         if point == p1:
             nxt = True
-
     p2 = nearest(shape2,midpoint(shape))
     nxt = False
-    for point in shape2[::-1]:
+    for point in shape2[::-1]: # goes the reverse way as point 1, in an attempt to reduce hourglass shaped paths
         if nxt:
             p2a = point
             break
         if point == p2:
             nxt = True
+    c = (p1a,p1,p2,p2a)
+    #print(f"C:{c}")
+    draw.polygon(c,fill=(250,0,0,125))
+# TODO add more links between rooms, to ensure that the entire maps is connected
+# TODO fix rooms that are close to each other connecting to each other
+# TODO make hallways more variable 
 
-    c = p1a,p1,p2,p2a
-    draw.polygon(c,fill=253)
 
-    # different way to connect rooms by drawing randomly from the midpoints of different rooms
-    # m1 = midpoint(shape)
-    # m2 = midpoint(shape2)
-    # m1_1 = m1[0]+random.randint(100,250),m1[1]+random.randint(100,250)
-    # m2_1 = m2[0]+random.randint(100,250),m2[1]+random.randint(100,250)
-    # # TODO add a system that adds points randomly in the hallways, allowing them to curve around a bit
-    # c = m1,m1_1,m2_1,m2 # this order matters
-    # draw.polygon(c,fill=128)
-# draw a grid
+# draw a grid over the room
 xx = 0
 step = x_coord/100
 while xx < x_coord:
-    draw.line([(xx,0),(xx,y_coord)],fill=200)
+    draw.line([(xx,0),(xx,y_coord)],fill=(200,0,0,125))
     xx = xx + step
 xx = 0
 while xx < y_coord:
-    draw.line([(0,xx),(x_coord,xx)],fill=200)
+    draw.line([(0,xx),(x_coord,xx)],fill=(200,0,0,125))
     xx = xx + step
 
 img.show()
