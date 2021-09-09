@@ -2,23 +2,20 @@
 
 # this version started from single polygon test, but instead now just placing many polygons, and then connecting them
 
-import random, math
+import random, math, conf
 from PIL import Image,ImageDraw
 
-# No longer recursive, because honestly, what the F was I thinking with that
-def randomshapes(numVertices,start,size,result, initialAngle,):
-    '''
-    numVertices is how many vertices each room should have... 10-20 seems good
-    Start is a tuple of coordinates where the room should start
-    size is how big the room should be
-    result is misnamed, should be room count basically, the upper limit of how many rooms you can have in your dungeon
-    initialAngle is used to determine where to start drawing new circles, and ... stuff idk  lol
-    midpoints is a list of all places where there is already a room
 
+def randomshapes(numVertices,start,size, initialAngle):
+    '''
+    numVertices is roughly how many vertices each room should have... 10-20 seems good
+    Start is a tuple of coordinates where the room should start
+    size is roughly how big the room should be
+    initialAngle is used to determine where to start drawing new circles, and ... stuff idk  lol
     '''
     # Now with a randomized starting point
-    numVertices = random.randint(numVertices-3,numVertices+7) # add some variation... has to be able to become simpler because each later version will use this new value
-    size = random.randint(size-10,size+40) # I almost want this one to be a standard deviation
+    numVertices = random.randint(numVertices-5,numVertices+7) # add some variation between each room
+    size = random.randint(size-10,size+40) # Should this follow a standard distribution?
     points = []
     anglerange = (2 * math.pi) / numVertices
     branched = 0
@@ -26,20 +23,13 @@ def randomshapes(numVertices,start,size,result, initialAngle,):
         point = (
                 start[0]+math.cos(x*anglerange+initialAngle-math.pi)*size*random.uniform(.7,1.3),
                 start[1]+math.sin(x*anglerange+initialAngle-math.pi)*size*random.uniform(.7,1.3)
-                ) # will this run?
+                )
         points.append(point)
-    #result.extend(points)
     return points
 
 def distance(p1,p2): # returns the distance between two points ( which are assumed to be tuples, but really a list would work too... which is bad )
     d = math.sqrt(((p1[0] - p2[0])**2) + ((p1[1]-p2[1])**2))
     return d
-
-
-def slope(p1,p2): # slope of two points, for generating hallways I think
-    return (p2[1]-p1[1])/(p2[0]/p1[0])
-def perpSlope(sl):# make a slope into a perpendicular slope... unused
-    return -1* (1/sl)
 
 def midpoint(shape): # calculates a shape's midpoint for use in measuring compared against other shapes
     total_x = 0
@@ -51,22 +41,57 @@ def midpoint(shape): # calculates a shape's midpoint for use in measuring compar
     total_y = total_y/len(shape)+1
     return (total_x,total_y)
 
-def nearest(shape,targ): # find the point in a shape that is nearest to a target point
+def nearest(shape,targ):
+    '''
+    find the point in a shape that is nearest to a target point
+    shape: is the shape which you are drawing points from
+    targ: the target coordinate point that you're finding the nearest point to
+    '''
     nr = (0,0)
     dist = 999999999
     for point in shape:
+        #print(f"trying {point} ")
         if distance(point,targ) < dist:
+        #    print(f"{point} is closer, replacing {nr} with {point}")
             nr = point
             dist = distance(point,targ)
+    #print(f"returning {nr}")
     return nr
+def link( s1,s2): # generates the coordinates to link two rooms
+    firstTargetPoint = nearest(s1,midpoint(s2))
+    #print(f" got {firstTargetPoint} from nearest")
+    secondTargetPoint = nearest(s2,firstTargetPoint)
+    print(s1)
+    print(f"POINT: {firstTargetPoint}")
+    q1 = adjacentPoints(s1,firstTargetPoint)
+    q2 = adjacentPoints(s2,secondTargetPoint)
 
+    thirdTargetPoint = nearest(q1,secondTargetPoint)
+    fourthTargetPoint = nearest(q2,thirdTargetPoint)
+    return (firstTargetPoint,secondTargetPoint,fourthTargetPoint,thirdTargetPoint)
+def adjacentPoints(shape,point):
+    '''
+    this might be genuinely bad :)
+    shape is a list of points
+    point is a point in there
+    '''
+    print(f"SHAPE:{shape}")
+    print(f"POINT:{point}")
+    ind = shape.index(point)
+    lower = ind - 1
+    if lower < 0:
+        lower = len(shape)-1
+    upper = ind + 1
+    if upper > len(shape)-1:
+        upper = 0
+    return (shape[lower],shape[upper])
 
-x_coord = 5000 # these could be set my a config or something
+x_coord = 5000 # these could be set by a config or something
 y_coord = 5000
 img = Image.new('RGB', (x_coord, y_coord), color = 'white')
 draw = ImageDraw.Draw(img,"RGBA")
 shapes = []
-q = randomshapes(12,(x_coord/2,y_coord/2),x_coord//13,0,1) # first shape, always in center
+q = randomshapes(12,(x_coord/2,y_coord/2),x_coord//13,1) # first shape, always in center
 shapes.append(q)
 draw.polygon(q,fill=(128,0,0,125),outline="blue")
 for x in range(9): # makes {x} random "rooms" change the number to increase or decrease the number of generated rooms
@@ -79,47 +104,50 @@ for x in range(9): # makes {x} random "rooms" change the number to increase or d
                 valid = False
                 break
 
-    q = randomshapes(12,co,x_coord//13,0,1)
+    q = randomshapes(12,co,x_coord//13,1)
     shapes.append(q)
     draw.ellipse([(co[0]-10,co[1]-10),(co[0]+10,co[1]+10)],fill="black") # draw a dot at the midpoint of the room, for debugging
     draw.polygon(q,fill=(random.randint(1,100),random.randint(1,250),random.randint(1,250),150), outline ="blue")
-print(shapes)
-# links the rooms together
 
-# links rooms based on distance, instead of randomly, but that means that often rooms link to each other instead of random ? TODO add more links
+# links rooms together, based on distance
 for shape in shapes:
     shape2 = []
     dist = 999999999
-    for s in shapes:
+    for s in shapes: # finds the closest shape
         nd = distance(midpoint(shape),midpoint(s))
         if nd > 50 and nd < dist:
             shape2 = s
             dist = nd
-
-    # This section generates paths by picking two near points on circles and links them
-    p1 = nearest(shape,midpoint(shape2))
-    nxt = False
-    for point in shape:
-        if nxt:
-            p1a = point
-            break
-        if point == p1:
-            nxt = True
-    p2 = nearest(shape2,midpoint(shape))
-    nxt = False
-    for point in shape2[::-1]: # goes the reverse way as point 1, in an attempt to reduce hourglass shaped paths
-        if nxt:
-            p2a = point
-            break
-        if point == p2:
-            nxt = True
-    c = (p1a,p1,p2,p2a)
+    #print(f"{shape},,,{shape2}")
+    c= link(shape,shape2)
     #print(f"C:{c}")
     draw.polygon(c,fill=(250,0,0,125))
+
+
+    # This section generates paths by picking two near points on circles and links them
+    # p1 = nearest(shape,midpoint(shape2))
+    # nxt = False
+    # for point in shape:
+    #     if nxt:
+    #         p1a = point
+    #         break
+    #     if point == p1:
+    #         nxt = True
+    # p2 = nearest(shape2,midpoint(shape))
+    # nxt = False
+    # for point in shape2[::-1]: # goes the reverse way as point 1, in an attempt to reduce hourglass shaped paths
+    #     if nxt:
+    #         p2a = point
+    #         break
+    #     if point == p2:
+    #         nxt = True
+    #c = (p1a,p1,p2,p2a)
+
 # TODO add more links between rooms, to ensure that the entire maps is connected
 # TODO fix rooms that are close to each other connecting to each other
-# TODO make hallways more variable 
-
+# TODO make hallways more variable
+# TODO square rooms/sections
+# TODO just more room shapes in general
 
 # draw a grid over the room
 xx = 0
