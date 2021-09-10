@@ -31,7 +31,7 @@ def distance(p1,p2): # returns the distance between two points ( which are assum
     d = math.sqrt(((p1[0] - p2[0])**2) + ((p1[1]-p2[1])**2))
     return d
 
-def intr(A,B,C): # component of the intersects function # using some fancy stackoverflow math 
+def intr(A,B,C): # component of the intersects function # using some fancy stackoverflow math
     return (C[1]-A[1]) * (B[0]-A[0]) > (B[1]-A[1]) * (C[0]-A[0]) # true if intersect
 def intersect(A,B,C,D):# takes line a ,b and c,d
     return intr(A,C,D) != intr(B,C,D) and intr(A,B,C) != intr(A,B,D)
@@ -67,8 +67,6 @@ def link( s1,s2): # generates the coordinates to link two rooms
     firstTargetPoint = nearest(s1,midpoint(s2))
     #print(f" got {firstTargetPoint} from nearest")
     secondTargetPoint = nearest(s2,firstTargetPoint)
-    print(s1)
-    print(f"POINT: {firstTargetPoint}")
     q1 = adjacentPoints(s1,firstTargetPoint)
     q2 = adjacentPoints(s2,secondTargetPoint)
     thirdTargetPoint = nearest(q1,secondTargetPoint)
