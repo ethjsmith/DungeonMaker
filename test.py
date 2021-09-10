@@ -31,6 +31,11 @@ def distance(p1,p2): # returns the distance between two points ( which are assum
     d = math.sqrt(((p1[0] - p2[0])**2) + ((p1[1]-p2[1])**2))
     return d
 
+def intr(A,B,C): # component of the intersects function # using some fancy stackoverflow math 
+    return (C[1]-A[1]) * (B[0]-A[0]) > (B[1]-A[1]) * (C[0]-A[0]) # true if intersect
+def intersect(A,B,C,D):# takes line a ,b and c,d
+    return intr(A,C,D) != intr(B,C,D) and intr(A,B,C) != intr(A,B,D)
+
 def midpoint(shape): # calculates a shape's midpoint for use in measuring compared against other shapes
     total_x = 0
     total_y = 0
@@ -58,6 +63,7 @@ def nearest(shape,targ):
     #print(f"returning {nr}")
     return nr
 def link( s1,s2): # generates the coordinates to link two rooms
+    # the ordering, ( or naming ) is confusing, but the order if you visualize the points as a sqaure would be first-> second-> forth-> third
     firstTargetPoint = nearest(s1,midpoint(s2))
     #print(f" got {firstTargetPoint} from nearest")
     secondTargetPoint = nearest(s2,firstTargetPoint)
@@ -65,10 +71,12 @@ def link( s1,s2): # generates the coordinates to link two rooms
     print(f"POINT: {firstTargetPoint}")
     q1 = adjacentPoints(s1,firstTargetPoint)
     q2 = adjacentPoints(s2,secondTargetPoint)
-
     thirdTargetPoint = nearest(q1,secondTargetPoint)
     fourthTargetPoint = nearest(q2,thirdTargetPoint)
-    return (firstTargetPoint,secondTargetPoint,fourthTargetPoint,thirdTargetPoint)
+    if intersect(firstTargetPoint,secondTargetPoint,fourthTargetPoint,thirdTargetPoint): # TODO test the order of the points, to see if this actually works?
+        return (firstTargetPoint,fourthTargetPoint,secondTargetPoint,thirdTargetPoint)
+    else:
+        return (firstTargetPoint,secondTargetPoint,fourthTargetPoint,thirdTargetPoint)
 def adjacentPoints(shape,point):
     '''
     this might be genuinely bad :)
